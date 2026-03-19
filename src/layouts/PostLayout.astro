@@ -38,18 +38,11 @@ const formattedDate = frontmatter.pubDate.toLocaleDateString('en-US', {
       <slot />
     </div>
 
-    <!--
-      Giscus comments — fill in your values from https://giscus.app
-      Steps:
-        1. Enable GitHub Discussions: repo Settings → Features → Discussions
-        2. Install Giscus app: https://github.com/apps/giscus
-        3. Go to https://giscus.app, enter your repo, copy the 4 values below
-    -->
     <Giscus
-      repo="YOUR_GITHUB_USERNAME/YOUR_REPO_NAME"
-      repoId="YOUR_REPO_ID"
+      repo="patr-cloud/blog"
+      repoId="R_kgDORrQjyQ"
       category="Blog Comments"
-      categoryId="YOUR_CATEGORY_ID"
+      categoryId="DIC_kwDORrQjyc4C4ysj"
     />
   </article>
 </BaseLayout>
@@ -76,10 +69,11 @@ const formattedDate = frontmatter.pubDate.toLocaleDateString('en-US', {
     flex-wrap: wrap;
   }
   .tags li {
-    background: var(--color-code-bg);
-    border: 1px solid var(--color-border);
+    background: #2e2450;
+    border: 1px solid #f89b4133;
     border-radius: 3px;
     padding: 0.1rem 0.5rem;
     font-size: 0.8rem;
+    color: #f89b41;
   }
 </style>
