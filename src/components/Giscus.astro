@@ -1,0 +1,57 @@
+---
+/**
+ * Giscus comment widget — powered by GitHub Discussions.
+ *
+ * Setup (one time):
+ *   1. Enable Discussions on this repo: Settings → Features → Discussions
+ *   2. Install the Giscus app: https://github.com/apps/giscus
+ *   3. Visit https://giscus.app, enter your repo name, and copy the values below.
+ *
+ * Then update the props in src/layouts/PostLayout.astro where this component is used.
+ */
+
+interface Props {
+  repo: string;         // e.g. "username/blog"
+  repoId: string;       // from giscus.app
+  category: string;     // e.g. "Blog Comments"
+  categoryId: string;   // from giscus.app
+  mapping?: string;
+  theme?: string;
+}
+
+const {
+  repo,
+  repoId,
+  category,
+  categoryId,
+  mapping = 'pathname',
+  theme = 'light',
+} = Astro.props;
+---
+
+<div class="giscus-wrapper">
+  <script
+    src="https://giscus.app/client.js"
+    data-repo={repo}
+    data-repo-id={repoId}
+    data-category={category}
+    data-category-id={categoryId}
+    data-mapping={mapping}
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="bottom"
+    data-theme={theme}
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+  ></script>
+</div>
+
+<style>
+  .giscus-wrapper {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+  }
+</style>
