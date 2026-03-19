@@ -1,0 +1,85 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Giscus from '../components/Giscus.astro';
+
+interface Props {
+  frontmatter: {
+    title: string;
+    description: string;
+    pubDate: Date;
+    tags?: string[];
+  };
+}
+
+const { frontmatter } = Astro.props;
+
+const formattedDate = frontmatter.pubDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<BaseLayout title={frontmatter.title} description={frontmatter.description}>
+  <article>
+    <header class="post-header">
+      <h1>{frontmatter.title}</h1>
+      <div class="post-meta">
+        <time datetime={frontmatter.pubDate.toISOString()}>{formattedDate}</time>
+        {frontmatter.tags && frontmatter.tags.length > 0 && (
+          <ul class="tags">
+            {frontmatter.tags.map(tag => <li>{tag}</li>)}
+          </ul>
+        )}
+      </div>
+    </header>
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    <!--
+      Giscus comments — fill in your values from https://giscus.app
+      Steps:
+        1. Enable GitHub Discussions: repo Settings → Features → Discussions
+        2. Install Giscus app: https://github.com/apps/giscus
+        3. Go to https://giscus.app, enter your repo, copy the 4 values below
+    -->
+    <Giscus
+      repo="YOUR_GITHUB_USERNAME/YOUR_REPO_NAME"
+      repoId="YOUR_REPO_ID"
+      category="Blog Comments"
+      categoryId="YOUR_CATEGORY_ID"
+    />
+  </article>
+</BaseLayout>
+
+<style>
+  .post-header { margin-bottom: 2rem; }
+  .post-header h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 0.75rem; }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+  }
+
+  .tags {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .tags li {
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.8rem;
+  }
+</style>
