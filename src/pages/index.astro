@@ -19,7 +19,7 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft))
         });
         return (
           <li>
-            <a href={`/posts/${post.slug}`} class="post-link">
+            <a href={`/posts/${post.id}`} class="post-link">
               <span class="post-title">{post.data.title}</span>
               <span class="post-date">{date}</span>
             </a>
