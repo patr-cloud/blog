@@ -1,0 +1,53 @@
+---
+interface Props {
+  name: string;
+  profile: string;
+  bio: string;
+}
+
+const { name, profile, bio } = Astro.props;
+---
+
+<aside class="author-card">
+  <span class="author-label">Author</span>
+  <a href={profile} target="_blank" rel="noopener noreferrer" class="author-name">
+    {name}
+  </a>
+  <p class="author-bio">{bio}</p>
+</aside>
+
+<style>
+  .author-card {
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .author-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .author-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .author-name:hover {
+    text-decoration: underline;
+  }
+
+  .author-bio {
+    margin: 0.5rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+  }
+</style>
