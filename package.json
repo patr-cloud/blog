@@ -1,4 +1,5 @@
 {
+  "packageManager": "pnpm@10.30.1",
   "name": "blog",
   "type": "module",
   "version": "0.0.1",
