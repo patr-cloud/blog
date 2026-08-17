@@ -41,7 +41,12 @@ draft: false                  # optional, default false
 
 GitHub Actions workflow (`.github/workflows/deploy.yml`) builds with pnpm on push to `master`. `site` in `astro.config.mjs` is `https://patr.cloud`.
 
-Domains (Cloudflare DNS):
-- `patr.cloud` (apex) is the GitHub Pages custom domain — set via `public/CNAME`. Apex A records point at GitHub Pages (`185.199.108–111.153`), DNS-only.
-- `www.patr.cloud` (CNAME → `patr-cloud.github.io`, DNS-only) is auto-redirected to the apex by GitHub Pages — it's the apex/www pair, no extra config.
-- `blog.patr.cloud` is the *old* domain. It's **proxied** through Cloudflare (orange cloud) with a Redirect Rule doing `blog.patr.cloud/posts/{slug}` → 302 → `patr.cloud/blog/{slug}` (dynamic: `concat("https://patr.cloud/blog/", substring(http.request.uri.path, 7))`). Arbitrary subdomains like this can't be served by GitHub Pages alongside the apex, hence the edge redirect.
+Domains (DNS on Cloudflare):
+- `patr.cloud` (apex) is the GitHub Pages custom domain — set via `public/CNAME` **and** the Pages `cname` setting (workflow-based Pages honours the setting, not just the file). Apex A records point at GitHub Pages (`185.199.108–111.153`), DNS-only. HTTPS is enforced.
+- `www.patr.cloud` (CNAME → `patr-cloud.github.io`, DNS-only) is auto-redirected to the apex by GitHub Pages — it's the apex/www pair, no extra config. The Pages cert covers both.
+- `blog.patr.cloud` is the *old* domain, kept alive only to redirect. It's **proxied** through Cloudflare (orange cloud) with one Redirect Rule covering the whole host:
+  - When: `http.host eq "blog.patr.cloud"`
+  - Then (dynamic, 301): `concat("https://patr.cloud/blog", regex_replace(http.request.uri.path, "^/posts", ""))`
+  - So `blog.patr.cloud/` → `patr.cloud/blog/` and `blog.patr.cloud/posts/{slug}` → `patr.cloud/blog/{slug}`. The `/blog` base has no trailing slash so root maps cleanly; the `regex_replace` strips the legacy `/posts` prefix. GitHub Pages can't serve an arbitrary subdomain alongside the apex, so this redirect lives at Cloudflare's edge.
+
+On-site (Astro `redirects` in `astro.config.mjs`), `patr.cloud/posts/{slug}` also redirects to `/blog/{slug}` for any links that hit the apex directly.
