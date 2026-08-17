@@ -1,12 +1,12 @@
 ---
 title: "Eliminating Tests with Types"
-description: "How I used Rust's type system to make an entire class of API tests unnecessary - if it compiles, it's correct."
+description: "How I used Rust's type system to make an entire class of API tests unnecessary: if it compiles, it's correct."
 pubDate: 2026-03-19
 author: "rakshith-ravi"
 tags: ["rust", "type-system", "api-design", "testing"]
 ---
 
-My favorite kind of test is one I never have to write. Not because I'm lazy - I certainly am - but because the compiler already proves the property for you.
+My favorite kind of test is one I never have to write. Not because I'm lazy (I certainly am), but because the compiler already proves the property for you.
 
 At [Patr](https://github.com/patr-cloud/patr), I'm building a cloud platform. It has about 150 API endpoints and counting. Creating deployments, managing workspaces, RBAC, container registries, domains, secrets and what not. Every one of those endpoints needs to parse a request, validate input, check authentication, enforce permissions, and return a well-formed response with the correct headers.
 
@@ -27,17 +27,17 @@ This means you can:
 - Omit a required response header
 - Wire up the wrong handler to the wrong route
 
-All of these are valid programs. They compile. They start. They just do the wrong thing, and you don't find out until a test catches it, a user reports it - or worse, a vulnerability is exploited.
+All of these are valid programs. They compile, they start, and they do the wrong thing. You don't find out until a test catches it, a user reports it, or worse, someone exploits it.
 
 What if the type system made these mistakes _unrepresentable_?
 
 # Building blocks: the header type system
 
-I've always been inspired by the way Rust handles enums and how you can represent data along with variants. I wanted to bring that same level of type safety to API endpoints. Before I show you the main trick, I need to explain the foundation it's built on. This is the part that makes everything else work.
+I've always been inspired by the way Rust handles enums and how you can represent data along with variants. I wanted to bring that same level of type safety to API endpoints. Before I show you the main trick, I need to explain the foundation it's built on.
 
 ## Typed headers
 
-The [`headers`](https://docs.rs/headers) crate gives us a `Header` trait. Any type that implements it knows its HTTP header name and how to encode/decode itself. Here's one of mine - a custom `X-Total-Count` header for paginated responses:
+The [`headers`](https://docs.rs/headers) crate gives us a `Header` trait. Any type that implements it knows its HTTP header name and how to encode/decode itself. Here's one of mine, a custom `X-Total-Count` header for paginated responses:
 
 ```rust
 pub struct TotalCountHeader(pub usize);
@@ -75,7 +75,7 @@ impl Header for TotalCountHeader {
 
 Nothing fancy. A typed wrapper around a header value. The important thing is: this type _is_ the header.
 
-## `HasHeader<H>` - "this struct contains header H"
+## `HasHeader<H>`: "this struct contains header H"
 
 Now I need a way to say "this struct has a `BearerToken` header in it." That's what `HasHeader` does:
 
@@ -126,11 +126,11 @@ impl Headers for MyRequestHeaders {
 }
 ```
 
-Now any code that has a `where T: HasHeader<BearerToken>` bound can accept this struct and pull out the token. This is what makes generic middleware possible - more on that in a moment.
+Now any code that has a `where T: HasHeader<BearerToken>` bound can accept this struct and pull out the token. This is what makes generic middleware possible, more on that in a moment.
 
-## `HasHeaders<(H1, H2, ...)>` - the tuple trick
+## `HasHeaders<(H1, H2, ...)>`: the tuple trick
 
-Here's where it gets interesting. I need a way to say "this struct has _all_ of these headers." Not just one - a set of them. I do this with a marker trait implemented over tuples:
+This is the fun part. I need a way to say "this struct has _all_ of these headers", a whole set of them, not just one. I do this with a marker trait implemented over tuples:
 
 ```rust
 pub trait HasHeaders<T> {}
@@ -163,7 +163,7 @@ You can write bounds like:
 where T: HasHeaders<(BearerToken, UserAgent)>
 ```
 
-And the compiler will reject any struct that's missing either header. At compile time. No runtime checks needed.
+And the compiler will reject any struct that's missing either header, before the program ever runs. There are no runtime checks involved.
 
 ## Declaring header requirements
 
@@ -193,7 +193,7 @@ impl<E: ApiEndpoint> RequiresRequestHeaders for AppAuthentication<E> {
 }
 ```
 
-This is the bridge. Types declare what they need. Trait bounds enforce those headers exist. The compiler connects the two.
+This is the bridge between the two halves: types declare what they need, and trait bounds enforce that those headers actually exist.
 
 ## The `AddTuple` problem
 
@@ -236,11 +236,11 @@ where
 }
 ```
 
-Any paginated endpoint _automatically_ requires `TotalCountHeader` in its response headers. Forget to include it? Compile error. You don't need a test for this. The type system handles it.
+Any paginated endpoint _automatically_ requires `TotalCountHeader` in its response headers. Forget to include it and the code won't compile, so there's nothing to write a test for.
 
-It's worth noting that `AddTuple` has no methods. It can't take a value of `(T2,)` and return a value of `(T2, T)`. There are no values involved at all - it's pure type-level computation. `<(T2,) as AddTuple<T>>::ResultantTuple` resolves to the _type_ `(T2, T)`, which then gets used in trait bounds. No code is generated for any of this. Once the compiler verifies the bounds are satisfied, it all disappears - zero-cost abstraction in the most literal sense.
+Note that `AddTuple` has no methods. It can't take a value of `(T2,)` and return a value of `(T2, T)`. There are no values involved at all; it's pure type-level computation. `<(T2,) as AddTuple<T>>::ResultantTuple` resolves to the _type_ `(T2, T)`, which then gets used in trait bounds. No code is generated for any of this. Once the compiler verifies the bounds are satisfied, it all disappears. Zero-cost abstraction in the most literal sense.
 
-## The `ApiEndpoint` trait - wiring it all together
+## The `ApiEndpoint` trait: wiring it all together
 
 Now you have the context to understand the main event. This is the trait that every endpoint in Patr implements:
 
@@ -290,11 +290,11 @@ where
 
 Look at the `where` clause. Now that you know the building blocks, you can read it:
 
-- **`RequestHeaders: HasHeaders<<Authenticator as RequiresRequestHeaders>::RequiredRequestHeaders>`** - If the authenticator says "I need a `BearerToken`", the request headers struct must contain one.
-- **`RequestHeaders: HasHeaders<<ResponseBody as RequiresRequestHeaders>::RequiredRequestHeaders>`** - If the response body type needs certain request headers, they must be present.
-- **`ResponseHeaders: HasHeaders<<RequestQuery as RequiresResponseHeaders>::RequiredResponseHeaders>`** - If the query type is `ListResourceQuery`, the response headers must include `TotalCountHeader`.
+- `RequestHeaders: HasHeaders<<Authenticator as RequiresRequestHeaders>::RequiredRequestHeaders>` means: if the authenticator says "I need a `BearerToken`", the request headers struct must contain one.
+- `RequestHeaders: HasHeaders<<ResponseBody as RequiresRequestHeaders>::RequiredRequestHeaders>` means: if the response body type needs certain request headers, they must be present.
+- `ResponseHeaders: HasHeaders<<RequestQuery as RequiresResponseHeaders>::RequiredResponseHeaders>` means: if the query type is `ListResourceQuery`, the response headers must include `TotalCountHeader`.
 
-Every piece of the endpoint declares what it needs. The trait bounds enforce that everything is connected. If anything is missing, the program doesn't compile.
+Every piece of the endpoint declares what it needs, and the trait bounds check that it's all wired up. If anything is missing, the program doesn't compile.
 
 # The `declare_api_endpoint!` macro
 
@@ -414,13 +414,13 @@ impl ApiEndpoint for CreateDeploymentRequest {
 }
 ```
 
-This is the key. The `ApiEndpoint` impl on the request body struct is where all the trait bounds from the trait definition kick in. The compiler checks every single one of them: does `CreateDeploymentRequestHeaders` have a `HasHeader<BearerToken>` impl (required by `AppAuthentication`)? Yes - the `#[derive(HasHeaders)]` generated it. Does the response headers type satisfy the required response headers from the query? The query is `()`, which requires `()` - trivially satisfied.
+The `ApiEndpoint` impl on the request body struct is where all the trait bounds from the trait definition kick in. The compiler checks every single one of them: does `CreateDeploymentRequestHeaders` have a `HasHeader<BearerToken>` impl (required by `AppAuthentication`)? Yes, the `#[derive(HasHeaders)]` generated it. Does the response headers type satisfy the required response headers from the query? The query is `()`, which requires `()`, so that's trivially satisfied.
 
-If any of these checks fail, you get a compile error pointing at the macro invocation. Not a test failure at runtime. A compiler error before your code ever runs.
+If any of these checks fail, you get a compile error pointing at the macro invocation, before your code ever runs. Not a test failure at runtime.
 
-Notice the `#[preprocess(...)]` attributes - `trim`, `regex`, `lowercase`. Input validation is declared at the type level. The handler doesn't validate - it receives a `CreateDeploymentRequestProcessed` type that's already been validated by the middleware. You can't forget to validate because the handler literally can't access unvalidated data.
+Notice the `#[preprocess(...)]` attributes: `trim`, `regex`, `lowercase`. Input validation is declared at the type level. The handler doesn't validate anything; it receives a `CreateDeploymentRequestProcessed` type that's already been validated by the middleware. You can't forget to validate because the handler literally can't access unvalidated data.
 
-For contrast, here's a simpler endpoint - login, which has no authentication:
+For contrast, here's a simpler endpoint, login, which has no authentication:
 
 ```rust
 macros::declare_api_endpoint!(
@@ -448,7 +448,7 @@ macros::declare_api_endpoint!(
 );
 ```
 
-No `authentication` block. This endpoint gets `Authenticator = NoAuthentication` and doesn't require a `BearerToken` header. Same framework, same guarantees, different shape.
+No `authentication` block. This endpoint gets `Authenticator = NoAuthentication` and doesn't require a `BearerToken` header. Same framework and the same guarantees, just a different shape.
 
 # Compile-time auth enforcement
 
@@ -471,7 +471,7 @@ pub enum AppAuthentication<E: ApiEndpoint> {
 }
 ```
 
-The extraction functions take `&ProcessedApiRequest<E>` - they can only reference fields that actually exist on the typed request. Try to extract `workspace_id` from a request that doesn't have one and the compiler stops you.
+The extraction functions take `&ProcessedApiRequest<E>`, so they can only reference fields that actually exist on the typed request. Try to extract `workspace_id` from a request that doesn't have one and the compiler stops you.
 
 Now look at how endpoints are mounted on the router:
 
@@ -490,7 +490,7 @@ where
 { /* ... */ }
 ```
 
-Read those bounds carefully. `mount_auth_endpoint` requires `ApiEndpoint<Authenticator = AppAuthentication<E>>`. You cannot mount an unauthenticated endpoint on the authenticated router. Period. It won't compile. Even if you manage to mount an unauthenticated endpoint, you have no way of getting the bearer token, since the headers doesn't have the token. Since you have no token, the layers can't generate a `UserRequestData` object, which provides you with no user data - basically unauthenticated. And the `HasHeader<BearerToken>` bound means: if you declare authentication but forget to include `authorization: BearerToken` in your request headers, it won't compile either.
+Read those bounds carefully. `mount_auth_endpoint` requires `ApiEndpoint<Authenticator = AppAuthentication<E>>`, so you cannot mount an unauthenticated endpoint on the authenticated router. It won't compile. Even if you manage to mount an unauthenticated endpoint, you have no way of getting the bearer token, since the headers doesn't have the token. Since you have no token, the layers can't generate a `UserRequestData` object, which provides you with no user data, so you're basically unauthenticated. And the `HasHeader<BearerToken>` bound means that if you declare authentication but forget to include `authorization: BearerToken` in your request headers, it won't compile either.
 
 # Types flow through middleware
 
@@ -508,7 +508,7 @@ ServiceBuilder::new()
     .layer(AuthEndpointLayer::new(handler))
 ```
 
-Same type parameter `E` threads through the entire stack. The request parser extracts exactly the types the handler expects. The preprocessor validates exactly the fields declared. The auth layer checks exactly the permissions specified. They literally cannot get out of sync - they share the type. Each layer adds additional information and sends it across further.
+The same type parameter `E` threads through the entire stack, so the request parser extracts exactly the types the handler expects, the preprocessor validates exactly the fields declared, and the auth layer checks exactly the permissions specified. They literally cannot get out of sync, because they all share the type. Each layer adds additional information and sends it across further.
 
 Without a `BearerToken`, the auth layer can't generate a `UserRequestData`. Without that, the `AuthenticatedAppRequest` struct that the handler destructures can't be constructed ("error: missing field `user_data`"). Compile error ftw.
 
@@ -555,19 +555,19 @@ pub async fn create_deployment(
 ) -> Result<AppResponse<CreateDeploymentRequest>, ErrorType> {
 ```
 
-The destructuring pattern _is_ the documentation. Every field, every header, every path parameter - right there in the function signature. There's no `req.body.get("name")`. It's just `name`. Wrong field name? Compile error. Missing field? Compile error. Wrong type? Compile error. Hotel? Trivago.
+The destructuring pattern _is_ the documentation. Every field, every header, every path parameter, right there in the function signature. There's no `req.body.get("name")`. It's just `name`. Wrong field name? Compile error. Missing field? Compile error. Wrong type? Compile error. Hotel? Trivago.
 
 # What tests I don't write
 
 Let me be concrete about what this eliminates:
 
-- **"Does this endpoint check authentication?"** - `Authenticator = AppAuthentication<E>` or `NoAuthentication`. It's a sealed trait. There's no third option.
-- **"Does this endpoint validate input?"** - `Preprocessable` runs before the handler. Fields with `#[preprocess(trim, length(min = 8))]` are validated. The handler receives `Processed` types.
-- **"Do the path parameters match the URL?"** - `TypedPath` derive. If the struct fields don't match `{workspace_id}` in the path template, it won't compile.
-- **"Does the response include required headers?"** - `HasHeaders<RequiredResponseHeaders>` bounds check this at compile time.
-- **"Is the `BearerToken` header present for authenticated endpoints?"** - `mount_auth_endpoint` requires `HasHeader<BearerToken>`. Forget it and the code doesn't compile.
-- **"Can someone wire up the wrong handler to the wrong route?"** - The handler destructures the exact generated types. Wrong types = compile error.
-- **"Does a list endpoint return `TotalCountHeader`?"** - `ListResourceQuery` + `AddTuple` injects the requirement automatically.
+- "Does this endpoint check authentication?" The authenticator is either `AppAuthentication<E>` or `NoAuthentication`. It's a sealed trait, so there's no third option.
+- "Does this endpoint validate input?" `Preprocessable` runs before the handler. Fields with `#[preprocess(trim, length(min = 8))]` are validated, and the handler receives `Processed` types.
+- "Do the path parameters match the URL?" The `TypedPath` derive. If the struct fields don't match `{workspace_id}` in the path template, it won't compile.
+- "Does the response include required headers?" The `HasHeaders<RequiredResponseHeaders>` bounds check this at compile time.
+- "Is the `BearerToken` header present for authenticated endpoints?" `mount_auth_endpoint` requires `HasHeader<BearerToken>`. Forget it and the code doesn't compile.
+- "Can someone wire up the wrong handler to the wrong route?" The handler destructures the exact generated types, so the wrong types are a compile error.
+- "Does a list endpoint return `TotalCountHeader`?" `ListResourceQuery` plus `AddTuple` injects the requirement automatically.
 
 None of these need a test. They're all compile errors.
 
@@ -575,15 +575,15 @@ None of these need a test. They're all compile errors.
 
 Let's talk about what this costs. Because it costs a lot.
 
-Compile times are terrible. All these generics, proc macros, deeply nested trait bounds - the compiler is doing an absurd amount of work. My M4 MacBook Pro sounds like it's about to take flight every time I hit `cargo build` if rust-analyzer is also running. When I compile, `rustc` sometimes just gets OOMed by the devcontainer. Granted, containers are run inside a VM on mac, but this is on an M4 MacBook Pro with 16GB of RAM, and I've allocated 12GB to the container. With RAM prices the way they are, I can't just throw more hardware at the problem. Also, thanks Apple, for not giving me the option to upgrade my RAM, so even if I could throw more hardware at the problem, I wouldn't be able to. Think different.
+Compile times are terrible. With all these generics, proc macros and deeply nested trait bounds, the compiler is doing an absurd amount of work. My M4 MacBook Pro sounds like it's about to take flight every time I hit `cargo build` if rust-analyzer is also running. When I compile, `rustc` sometimes just gets OOMed by the devcontainer. Granted, containers are run inside a VM on mac, but this is on an M4 MacBook Pro with 16GB of RAM, and I've allocated 12GB to the container. With RAM prices the way they are, I can't just throw more hardware at the problem. Also, thanks Apple, for not giving me the option to upgrade my RAM, so even if I could throw more hardware at the problem, I wouldn't be able to. Think different.
 
-So I can't compile inside a devcontainer - the RAM just isn't there. My stupid workaround is: compile locally, use the devcontainer only for dependencies (database, Redis, etc.), and port-forward everything to localhost with VSCode. It works. It's dumb. If someone has a better solution, please write to me.
+So I can't compile inside a devcontainer. The RAM just isn't there. My stupid workaround is: compile locally, use the devcontainer only for dependencies (database, Redis, etc.), and port-forward everything to localhost with VSCode. It works. It's dumb. If someone has a better solution, please write to me.
 
 Hopefully compute gets cheaper over time, hopefully I get better machines, and god oh god please, hopefully somebody in the Rust team has the energy and time to improve compile times. Heck, give me an interpreter that just runs my code. I don't care. I'll take it. But, that's a rant for another day.
 
-So why did I choose this approach? Because context matters. I'm an open source maintainer. Mostly a solo dev. I don't have a QA team. Every time I add a new feature, I need to be sure the previous ones didn't break. Sure, I could ask an LLM to write tests for me - but I still have to review what it writes. No, I'm not _that_ kind of person. LLMs may write code, but I still review and maintain every line. (Most of this was built before LLMs were good enough to handle this kind of thing anyway, but that's beside the point.)
+So why did I choose this approach? Because context matters. I'm an open source maintainer. Mostly a solo dev. I don't have a QA team. Every time I add a new feature, I need to be sure the previous ones didn't break. Sure, I could ask an LLM to write tests for me, but I still have to review what it writes. No, I'm not _that_ kind of person. LLMs may write code, but I still review and maintain every line. (Most of this was built before LLMs were good enough to handle this kind of thing anyway, but that's beside the point.)
 
-Having things break in my terminal instead of through a user complaining about it - that's what I want. I'm willing to trade compile time for that. More time coding upfront, less time debugging later.
+Having things break in my terminal instead of through a user complaining about it, that's what I want. I'm willing to trade compile time for that. More time coding upfront, less time debugging later.
 
 Is it objectively better? Honestly, I don't know. I'm writing about this because I think it's cool.
 
@@ -591,6 +591,6 @@ Is it objectively better? Honestly, I don't know. I'm writing about this because
 
 You still need tests for business logic. Does creating a deployment actually insert the right rows in the database? Does the auth flow issue valid JWTs? Those are questions about _behavior_, and the type system can't answer them.
 
-But the _plumbing_ - is the right handler on the right route with the right method checking the right auth requiring the right headers returning the right response format - all of that is proven by the compiler. For about 150 endpoints and counting.
+But the _plumbing_ (is the right handler on the right route with the right method checking the right auth requiring the right headers returning the right response format) is all proven by the compiler. For about 150 endpoints and counting.
 
-The type system is the most reliable test suite I've ever used. It runs on every compilation. It's exhaustive. And most importantly - cache invalidation is somebody else's problem.
+The type system is the most reliable test suite I've ever used. It runs on every compilation. It's exhaustive. And most importantly, cache invalidation is somebody else's problem.

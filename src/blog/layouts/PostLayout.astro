@@ -1,5 +1,5 @@
 ---
-import BaseLayout from './BaseLayout.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import Giscus from '../components/Giscus.astro';
 import AuthorCard from '../components/AuthorCard.astro';
 import TableOfContents from '../components/TableOfContents.astro';
@@ -28,9 +28,42 @@ const formattedDate = frontmatter.pubDate.toLocaleDateString('en-US', {
   month: 'long',
   day: 'numeric',
 });
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: frontmatter.title,
+  description: frontmatter.description,
+  datePublished: frontmatter.pubDate.toISOString(),
+  url: Astro.url.href,
+  mainEntityOfPage: Astro.url.href,
+  ...(frontmatter.tags?.length ? { keywords: frontmatter.tags.join(', ') } : {}),
+  author: {
+    '@type': 'Person',
+    name: author.name,
+    url: author.profile,
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Patr',
+    url: Astro.site?.href,
+    logo: {
+      '@type': 'ImageObject',
+      url: new URL('/logo.svg', Astro.site).href,
+    },
+  },
+  image: new URL('/og-default.png', Astro.site).href,
+};
 ---
 
-<BaseLayout title={frontmatter.title} description={frontmatter.description}>
+<BaseLayout
+  title={frontmatter.title}
+  description={frontmatter.description}
+  ogType="article"
+  publishedTime={frontmatter.pubDate}
+  tags={frontmatter.tags}
+  jsonLd={jsonLd}
+>
   <article class="post-article">
     <TableOfContents headings={headings} />
     <header class="post-header">

@@ -3,11 +3,32 @@ interface Props {
   title: string;
   description?: string;
   canonicalUrl?: string;
+  ogType?: 'website' | 'article';
+  ogImage?: string;
+  publishedTime?: Date;
+  tags?: string[];
+  jsonLd?: object | object[];
+  titleSuffix?: boolean;
+  wide?: boolean;
 }
 
-const { title, description = '', canonicalUrl = Astro.url.href } = Astro.props;
-const siteName = 'Patr Blog';
-const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+const {
+  title,
+  description = '',
+  canonicalUrl = Astro.url.href,
+  ogType = 'website',
+  ogImage = '/og-default.png',
+  publishedTime,
+  tags,
+  jsonLd,
+  titleSuffix = true,
+  wide = false,
+} = Astro.props;
+
+const siteName = 'Patr';
+const fullTitle = !titleSuffix || title === siteName ? title : `${title} | ${siteName}`;
+const ogImageUrl = new URL(ogImage, Astro.site).href;
+const githubUrl = 'https://github.com/patr-cloud/patr';
 ---
 
 <!doctype html>
@@ -22,28 +43,44 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
     <link rel="canonical" href={canonicalUrl} />
 
     <!-- Open Graph -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:title" content={fullTitle} />
     {description && <meta property="og:description" content={description} />}
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:site_name" content={siteName} />
+    <meta property="og:image" content={ogImageUrl} />
+    {ogType === 'article' && publishedTime && (
+      <meta property="article:published_time" content={publishedTime.toISOString()} />
+    )}
+    {ogType === 'article' && tags?.map(tag => (
+      <meta property="article:tag" content={tag} />
+    ))}
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
     {description && <meta name="twitter:description" content={description} />}
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    {jsonLd && (
+      <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    )}
 
     <link rel="sitemap" href="/sitemap-index.xml" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
-  <body>
+  <body class:list={{ wide }}>
     <header>
       <nav>
         <a href="/" class="site-name">
           <img src="/logo.svg" alt="Patr" class="site-logo" />
-          <span class="blog-label">Blog</span>
         </a>
+        <div class="nav-links">
+          <a href="/blog">Blog</a>
+          <a href={`${githubUrl}#readme`}>Docs</a>
+          <a href={githubUrl}>GitHub</a>
+        </div>
       </nav>
     </header>
 
@@ -52,7 +89,11 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
     </main>
 
     <footer>
-      <p>&copy; {new Date().getFullYear()}</p>
+      <p>&copy; {new Date().getFullYear()} Patr</p>
+      <div class="footer-links">
+        <a href={githubUrl}>GitHub</a>
+        <a href="/blog">Blog</a>
+      </div>
     </footer>
   </body>
 </html>
@@ -66,6 +107,11 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
     --color-muted: #ffffffac;
     --color-border: #414245;
     --color-code-bg: #191131;
+    --color-accent-glow: rgba(248, 155, 65, 0.14);
+    --color-panel: #140b30;
+    --mark-yes: #4bb96f;
+    --mark-partial: #f0a94a;
+    --mark-no: #c95c62;
     --font-sans: 'Poppins', 'Roboto', 'Helvetica', 'Arial', sans-serif;
     --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
   }
@@ -91,6 +137,9 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
     margin: 0 auto;
     padding: 0 1.25rem;
   }
+  body.wide header, body.wide main, body.wide footer {
+    max-width: 960px;
+  }
   header {
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
@@ -107,7 +156,7 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
   }
 
   /* ─── Nav ────────────────────────────────────────────────── */
-  nav { display: flex; align-items: center; }
+  nav { display: flex; align-items: center; justify-content: space-between; }
   .site-name {
     display: flex;
     align-items: center;
@@ -119,13 +168,30 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
   }
   .site-name:hover { opacity: 0.75; }
   .site-logo { height: 21px; width: auto; }
-  .blog-label {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--color-muted);
-    border-left: 1px solid var(--color-border);
-    padding-left: 0.75rem;
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
   }
+  .nav-links a {
+    color: var(--color-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .nav-links a:hover { color: var(--color-accent); opacity: 1; }
+
+  /* ─── Footer ─────────────────────────────────────────────── */
+  footer {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  footer p { margin: 0; }
+  .footer-links { display: flex; gap: 1.25rem; }
+  .footer-links a { color: var(--color-muted); }
+  .footer-links a:hover { color: var(--color-accent); opacity: 1; }
 
   /* ─── Prose ──────────────────────────────────────────────── */
   .prose h1, .prose h2, .prose h3, .prose h4 {

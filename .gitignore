@@ -3,3 +3,5 @@ node_modules/
 .astro/
 .env
 .env.*
+.[Dd][Ss]_[Ss]tore
+.playwright-mcp/

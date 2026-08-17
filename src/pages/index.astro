@@ -3,15 +3,308 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+
+const githubUrl = 'https://github.com/patr-cloud/patr';
+const description =
+  'Patr is an open-source, self-hosted platform for deploying and running your apps on your own servers — no Kubernetes expertise, no DevOps team, no separate observability stack.';
+
+// Comparison matrix. mark ∈ 'yes' | 'partial' | 'no'; note is an optional caveat.
+const cell = (mark, note) => ({ mark, note });
+const comparisonCols = ['Patr', 'Heroku / Render', 'Coolify', 'DIY Kubernetes'];
+const comparisonRows = [
+  ['Open source',              cell('yes'), cell('no'),  cell('yes'), cell('yes')],
+  ['Runs on your hardware',    cell('yes'), cell('no'),  cell('yes'), cell('yes')],
+  ['Full product, free',       cell('yes'), cell('no'),  cell('yes'), cell('partial', "free software, your time isn't")],
+  ['Logs & metrics built in',  cell('yes'), cell('partial', 'paid add-ons'), cell('partial', 'basic'), cell('no', 'assemble it yourself')],
+  ['VMs, clusters & bare metal', cell('yes'), cell('no', 'their cloud only'), cell('partial', 'Docker hosts'), cell('yes')],
+  ['Battle-tested',            cell('partial', 'in prod now — mine'), cell('yes'), cell('yes'), cell('yes')],
+];
+const markLabel = { yes: 'Yes', partial: 'Partial', no: 'No' };
+
+// What's in the box — capabilities of the open, self-hosted product.
+// TODO: confirm this list against the real feature set before shipping.
+const capabilities = [
+  { icon: 'deploy',   title: 'Deploy anything',    body: 'A container image or a repo, onto a VM, a k8s cluster, or bare metal. One workflow, whatever the target.' },
+  { icon: 'registry', title: 'Container registry', body: 'Push your images straight to Patr. No third-party registry to wire up first.' },
+  { icon: 'domain',   title: 'Domains + HTTPS',    body: 'A free HTTPS URL out of the box, or bring your own domain. SSL is handled for you.' },
+  { icon: 'metrics',  title: 'Logs & metrics',     body: "Built in. See what your app is doing without standing up OTEL and Grafana yourself." },
+  { icon: 'secrets',  title: 'Secrets & config',   body: 'Managed secrets, injected into your deployments — not pasted into a YAML file somewhere.' },
+  { icon: 'cli',      title: 'CLI + API',          body: 'Drive it all from the terminal, or hit the typed API directly. Scriptable top to bottom.' },
+];
+
+const faqs = [
+  { q: 'Is it actually free?', a: "The self-hosted version is the whole product — every feature, nothing greyed out. The only paid tier adds the governance stuff big companies need: SSO, billing, org-level controls. Solo devs and small teams never hit that wall." },
+  { q: 'Do I really not need Kubernetes?', a: "Right. Point Patr at a VM, a cluster, or a spare box and deploy. If you happen to run k8s it'll use it; if you don't, you'll never know it was an option." },
+  { q: 'Where does my data live?', a: "On your hardware. Patr is something you run, not a service you rent — nothing phones home, and there's no account you can get locked out of." },
+  { q: 'What happens when I outgrow one server?', a: 'Add more runners and spread deployments across them. Same workflow, more machines under it.' },
+  { q: 'Can I use it in production today?', a: "I do — that's the whole battle-tested-on-me thing above. For everyone else it's closed beta while I knock the edges off. Want in early? The code's on GitHub." },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Patr',
+    url: Astro.site?.href,
+    logo: new URL('/logo.svg', Astro.site).href,
+    sameAs: ['https://github.com/patr-cloud'],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Patr',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Linux',
+    url: Astro.site?.href,
+    description,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    isAccessibleForFree: true,
+    license: `${githubUrl}/blob/develop/LICENSE`,
+  },
+];
 ---
 
-<BaseLayout title="Blog" description="A collection of posts.">
-  <h1 class="page-title">Posts</h1>
+<BaseLayout
+  title="Patr — deploy apps on your own servers"
+  titleSuffix={false}
+  description={description}
+  jsonLd={jsonLd}
+  wide
+>
+  <!-- ─── Hero ─────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <p class="kicker">Open-source · self-hosted PaaS</p>
+    <h1>Deploying an app shouldn't need a whole team.</h1>
+    <p class="hero-sub">
+      Patr is an open-source, self-hosted platform that runs your apps on your own
+      servers — a VM, a k8s cluster, or the Raspberry Pi in your drawer.
+      You build. It deals with the rest.
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href={githubUrl}>GitHub</a>
+      <a class="btn" href={`${githubUrl}#readme`}>Read the docs</a>
+    </div>
+    <p class="beta-note">
+      <span class="beta-badge">Closed beta</span>
+      Not open to the public yet — I'm running it in real production right now,
+      hitting the bugs myself so they're dead before they ever reach you. The
+      code's <a href={githubUrl}>on GitHub</a> if you want a look under the hood.
+    </p>
+  </section>
 
-  {posts.length === 0 ? (
-    <p class="empty">No posts yet.</p>
-  ) : (
+  <!-- ─── Why ──────────────────────────────────────────────── -->
+  <section class="section reveal">
+    <p class="kicker">Why this exists</p>
+    <h2>Shipping shouldn't be open heart surgery.</h2>
+    <p>
+      You built the thing. Getting it in front of users should be the easy part.
+      Instead it's an entire profession: pipelines, YAML, dashboards, a small army
+      babysitting infrastructure so that something that's already built can go live.
+      I've watched teams treat shipping an app like open heart surgery my whole
+      career, and it never sat right with me.
+    </p>
+    <p>
+      Patr's whole job is making sure you never think about any of it. An entire
+      PaaS, running on your own setup.
+    </p>
+  </section>
+
+  <!-- ─── Feature grid ─────────────────────────────────────── -->
+  <section class="section reveal">
+    <p class="kicker">What you're not signing up for</p>
+    <div class="feature-grid">
+      <div class="feature">
+        <h3><span class="no">No</span> Kubernetes PhD</h3>
+        <p>
+          Point Patr at a VM, a cluster, or the machine under your desk. It doesn't
+          care what's underneath, and you don't have to either.
+        </p>
+      </div>
+      <div class="feature">
+        <h3><span class="no">No</span> crippled free tier</h3>
+        <p>
+          Self-hosted is the full product, not a demo with the good buttons greyed
+          out. Everything the paid plan has, minus the stuff only large orgs care about.
+        </p>
+      </div>
+      <div class="feature">
+        <h3><span class="no">No</span> cloud provider required</h3>
+        <p>
+          Your hardware is enough. A cloud account is optional, not a prerequisite.
+          Your servers, your data, your call.
+        </p>
+      </div>
+      <div class="feature">
+        <h3><span class="no">No</span> separate observability stack</h3>
+        <p>
+          Logs and metrics are built in. Nobody should lose a weekend wiring up
+          OTEL and Grafana just to see why their app crashed.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── What's in the box ────────────────────────────────── -->
+  <section class="section reveal">
+    <p class="kicker">What's in the box</p>
+    <h2>A whole PaaS, not a deploy button.</h2>
+    <div class="cap-grid">
+      {capabilities.map(c => (
+        <div class="cap">
+          <span class="cap-icon" aria-hidden="true">
+            {c.icon === 'deploy' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="m8 17 4-4 4 4"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+            )}
+            {c.icon === 'registry' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            )}
+            {c.icon === 'domain' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+            )}
+            {c.icon === 'metrics' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            )}
+            {c.icon === 'secrets' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+            )}
+            {c.icon === 'cli' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>
+            )}
+          </span>
+          <h3>{c.title}</h3>
+          <p>{c.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ─── Use cases ────────────────────────────────────────── -->
+  <section class="section reveal">
+    <p class="kicker">What you'd use it for</p>
+    <ul class="use-cases">
+      <li>Simplifying your AWS setup so your team ships faster instead of fighting the console.</li>
+      <li>Letting developers deploy their own apps without a DevOps team getting involved.</li>
+      <li>Getting logs and metrics without running a second infrastructure project to see the first one.</li>
+      <li>Running on hardware you already own instead of renting someone else's.</li>
+    </ul>
+  </section>
+
+  <!-- ─── How it works ─────────────────────────────────────── -->
+  <!-- TODO: replace the terminal commands with the real CLI and add dashboard screenshots -->
+  <section class="section reveal">
+    <p class="kicker">How does it work?</p>
+    <h2>You run it. You point it at your servers. You deploy.</h2>
+    <div class="terminal" role="img" aria-label="Terminal session showing the Patr deploy workflow">
+      <div class="terminal-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="terminal-title">you@your-machine — patr</span>
+      </div>
+      <pre class="terminal-body"><code><span class="c-comment"># 1. set Patr up on a server you own</span>
+<span class="c-prompt">$</span> patr runner setup
+<span class="c-ok">✓</span> Patr is up at https://patr.your-domain.com
+
+<span class="c-comment"># 2. create a runner to deploy your apps onto</span>
+<span class="c-prompt">$</span> patr runner create
+<span class="c-ok">✓</span> runner created
+
+<span class="c-comment"># 3. push a deployment. that's the whole workflow</span>
+<span class="c-prompt">$</span> patr deployment push
+<span class="c-ok">✓</span> built
+<span class="c-ok">✓</span> deployed
+<span class="c-arrow">→</span> https://myapp.your-domain.com</code></pre>
+    </div>
+    <p class="muted">
+      Everything after that — logs, metrics, restarts, domains — is in the dashboard.
+      Screenshots coming as the beta opens up.
+    </p>
+  </section>
+
+  <!-- ─── Battle-tested ────────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="callout">
+      <p class="kicker">Battle-tested — on me first</p>
+      <h2>I'm hitting the bugs in prod so you don't have to.</h2>
+      <p>
+        Patr isn't a side project I'm hoping works someday. It's running real
+        production workloads right now — mine. Every rough edge, every 3am page,
+        every ugly edge case gets found by me, in prod, before it ever reaches you.
+      </p>
+      <p>
+        That's the whole point of the closed beta. I'd rather be the one who gets
+        burned. By the time the doors open, the scary bugs are already dead — killed
+        in a real production environment, not a test suite pretending to be one.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── Comparison ───────────────────────────────────────── -->
+  <section class="section reveal">
+    <p class="kicker">How is this different from…</p>
+    <div class="table-wrap">
+      <table class="comparison">
+        <thead>
+          <tr>
+            <th></th>
+            {comparisonCols.map((col, i) => (
+              <th class={i === 0 ? 'col-patr' : ''}>{col}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {comparisonRows.map(([label, ...cells]) => (
+            <tr>
+              <td class="row-label">{label}</td>
+              {cells.map((c, i) => (
+                <td class={i === 0 ? 'col-patr' : ''}>
+                  <span class={`mark mark-${c.mark}`} role="img" aria-label={markLabel[c.mark]}>
+                    {c.mark === 'yes' && (
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    )}
+                    {c.mark === 'no' && (
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                    )}
+                    {c.mark === 'partial' && (
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 12c2-3 4-3 6 0s4 3 6 0" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    )}
+                  </span>
+                  {c.note && <span class="mark-note">{c.note}</span>}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── FAQ ──────────────────────────────────────────────── -->
+  <section class="section reveal">
+    <p class="kicker">Questions you're probably asking</p>
+    <div class="faq">
+      {faqs.map((f, i) => (
+        <details class="faq-item" open={i === 0}>
+          <summary>{f.q}</summary>
+          <p class="faq-a">{f.a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+
+  <!-- ─── Blog ─────────────────────────────────────────────── -->
+  <section class="section reveal">
+    <p class="kicker">Latest from the blog</p>
     <ul class="post-list">
       {posts.map(post => {
         const date = post.data.pubDate.toLocaleDateString('en-US', {
@@ -19,7 +312,7 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft))
         });
         return (
           <li>
-            <a href={`/posts/${post.id}`} class="post-link">
+            <a href={`/blog/${post.id}`} class="post-link">
               <span class="post-title">{post.data.title}</span>
               <span class="post-date">{date}</span>
             </a>
@@ -30,21 +323,355 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft))
         );
       })}
     </ul>
-  )}
+    <p><a href="/blog">All posts →</a></p>
+  </section>
+
+  <!-- ─── Contribute ───────────────────────────────────────── -->
+  <section class="section reveal">
+    <p class="kicker">Come build it with me</p>
+    <p>
+      Patr needs Rust people for the core, frontend people for the dashboard, and
+      people who write docs, answer questions, and make a community worth hanging
+      out in. I can't pay you today — but the moment there's real income, the
+      people who built it with me get paid.
+      <a href="/blog/where-were-we-all-these-years">The full, honest version of that story is here</a>.
+    </p>
+  </section>
+
+  <!-- ─── Closing ──────────────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="closing">
+      <h2>Sounds good?</h2>
+      <div class="cta-row">
+        <a class="btn btn-primary" href={githubUrl}>GitHub</a>
+        <a class="btn" href={`${githubUrl}#readme`}>Read the docs</a>
+      </div>
+      <p class="muted">
+        It's early, and I'm not going to pretend otherwise. But "early" here means
+        I'm the one in prod hitting the sharp edges, not you. Come watch it harden —
+        or grab a file and help me sand it down faster.
+      </p>
+    </div>
+  </section>
 </BaseLayout>
 
-<style>
-  .page-title { font-size: 1.5rem; margin: 0 0 2rem; }
+<script>
+  // Scroll-reveal: progressive enhancement, disabled under reduced-motion.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const els = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('is-visible'));
+  } else {
+    document.documentElement.classList.add('reveal-ready');
+    const io = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+    els.forEach(el => io.observe(el));
+  }
+</script>
 
+<style>
+  section { margin-bottom: 5.5rem; }
+
+  /* ─── Kicker (section eyebrow) ─── */
+  .kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    margin: 0 0 0.75rem;
+    text-align: center;
+  }
+
+  /* ─── Hero ─── */
+  .hero {
+    position: relative;
+    text-align: center;
+    padding: 4rem 0 2rem;
+  }
+  .hero .kicker { margin-bottom: 1rem; }
+  .hero-glow {
+    position: absolute;
+    top: -12%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(720px, 90%);
+    height: 340px;
+    background: radial-gradient(ellipse at center, var(--color-accent-glow), transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .hero h1 {
+    font-size: clamp(2.25rem, 5.5vw, 3.4rem);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    margin: 0 auto 1.5rem;
+    max-width: 16em;
+  }
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--color-muted);
+    max-width: 38em;
+    margin: 0 auto 2.25rem;
+  }
+  .beta-note {
+    margin-top: 1.75rem;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+  }
+  .beta-badge {
+    display: inline-block;
+    background: var(--color-accent-glow);
+    color: var(--color-accent);
+    border: 1px solid rgba(248, 155, 65, 0.35);
+    border-radius: 999px;
+    padding: 0.1rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
+
+  /* ─── Buttons ─── */
+  .cta-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-block;
+    padding: 0.65rem 1.6rem;
+    border: 1px solid var(--color-accent);
+    border-radius: 8px;
+    color: var(--color-accent);
+    font-weight: 600;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    opacity: 1;
+    box-shadow: 0 6px 20px -6px var(--color-accent-glow);
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 8px 26px -6px rgba(248, 155, 65, 0.5);
+  }
+
+  /* ─── Sections ─── */
+  .section h2 {
+    font-size: clamp(1.5rem, 3vw, 1.9rem);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin: 0 auto 1.25rem;
+    max-width: 20em;
+    text-align: center;
+  }
+  .section p { max-width: 44em; }
+  /* Standalone prose paragraphs read centered; text inside cards/faq/table keeps its own alignment. */
+  .section > p {
+    max-width: 42em;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+  .muted { color: var(--color-muted); font-size: 0.95rem; }
+
+  /* ─── Feature grid ─── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+  @media (max-width: 640px) {
+    .feature-grid { grid-template-columns: 1fr; }
+  }
+  .feature {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1.6rem;
+    background: var(--color-panel);
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .feature::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-accent), transparent 70%);
+    opacity: 0.6;
+  }
+  .feature:hover {
+    transform: translateY(-3px);
+    border-color: rgba(248, 155, 65, 0.4);
+  }
+  .feature h3 {
+    margin: 0 0 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .feature h3 .no { color: var(--color-accent); }
+  .feature p { margin: 0; color: var(--color-muted); }
+
+  /* ─── Use cases ─── */
+  .use-cases {
+    margin: 0 auto;
+    padding: 0;
+    max-width: 54em;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem 2rem;
+    text-align: left;
+  }
+  @media (max-width: 560px) { .use-cases { grid-template-columns: 1fr; } }
+  .use-cases li {
+    position: relative;
+    padding-left: 1.75rem;
+    color: var(--color-muted);
+  }
+  .use-cases li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--color-accent);
+  }
+
+  /* ─── Terminal ─── */
+  .terminal {
+    max-width: 46em;
+    margin: 0 auto;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--color-code-bg);
+    box-shadow: 0 20px 50px -24px rgba(0, 0, 0, 0.7);
+    text-align: left;
+  }
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.9rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .terminal-bar .dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #4a4062;
+  }
+  .terminal-bar .dot:nth-child(1) { background: #e05a5a; }
+  .terminal-bar .dot:nth-child(2) { background: #e0a94a; }
+  .terminal-bar .dot:nth-child(3) { background: #4bb96f; }
+  .terminal-title {
+    margin-left: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
+  .terminal-body {
+    margin: 0;
+    padding: 1.15rem 1.35rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: #e6e6e6;
+  }
+  .c-comment { color: #7a7290; }
+  .c-prompt { color: var(--color-accent); }
+  .c-ok { color: var(--mark-yes); }
+  .c-arrow { color: var(--color-accent); }
+  .section .muted { margin-top: 1.5rem; }
+
+  /* ─── Comparison table ─── */
+  .table-wrap { overflow-x: auto; }
+  .comparison {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.95rem;
+  }
+  .comparison th, .comparison td {
+    text-align: left;
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+  .comparison thead th {
+    font-weight: 600;
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .comparison .row-label { font-weight: 500; white-space: nowrap; }
+  .comparison tbody tr:last-child td { border-bottom: none; }
+  /* Highlighted Patr column */
+  .comparison .col-patr {
+    background: var(--color-accent-glow);
+  }
+  .comparison thead .col-patr {
+    color: var(--color-accent);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+  .comparison tbody tr:last-child .col-patr {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  /* Marks */
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    vertical-align: middle;
+  }
+  .mark svg { width: 15px; height: 15px; }
+  .mark-yes { color: var(--mark-yes); background: rgba(75, 185, 111, 0.12); }
+  .mark-partial { color: var(--mark-partial); background: rgba(240, 169, 74, 0.12); }
+  .mark-no { color: var(--mark-no); background: rgba(201, 92, 98, 0.12); }
+  .mark-note {
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+  }
+
+  /* ─── Blog list (matches /blog) ─── */
   .post-list {
     list-style: none;
-    margin: 0;
+    margin: 0 auto 1.5rem;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
+    max-width: 44em;
+    text-align: left;
   }
-
   .post-link {
     display: flex;
     justify-content: space-between;
@@ -52,18 +679,130 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft))
     gap: 1rem;
     flex-wrap: wrap;
     color: var(--color-text);
-    text-decoration: none;
   }
   .post-link:hover .post-title { color: var(--color-accent); }
-
   .post-title { font-size: 1.125rem; font-weight: 600; }
-  .post-date  { font-size: 0.875rem; color: var(--color-muted); white-space: nowrap; }
+  .post-date { font-size: 0.875rem; color: var(--color-muted); white-space: nowrap; }
+  .post-description { margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--color-muted); }
 
-  .post-description {
-    margin: 0.25rem 0 0;
-    font-size: 0.9rem;
+  /* ─── Capabilities (what's in the box) ─── */
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+  @media (max-width: 860px) { .cap-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .cap-grid { grid-template-columns: 1fr; } }
+  .cap {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    background: var(--color-panel);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .cap:hover {
+    transform: translateY(-3px);
+    border-color: rgba(248, 155, 65, 0.4);
+  }
+  .cap-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: var(--color-accent-glow);
+    color: var(--color-accent);
+    margin-bottom: 1rem;
+  }
+  .cap-icon svg { width: 22px; height: 22px; }
+  .cap h3 { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
+  .cap p { margin: 0; color: var(--color-muted); font-size: 0.95rem; }
+
+  /* ─── FAQ ─── */
+  .faq {
+    max-width: 46em;
+    margin: 0 auto;
+    display: grid;
+    gap: 0.75rem;
+    text-align: left;
+  }
+  .faq-item {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-panel);
+  }
+  .faq-item summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    transition: color 0.15s ease;
+  }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after {
+    content: '+';
+    color: var(--color-accent);
+    font-size: 1.35rem;
+    line-height: 1;
+    font-weight: 400;
+  }
+  .faq-item[open] summary::after { content: '−'; }
+  .faq-item summary:hover { color: var(--color-accent); }
+  .faq-item summary:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  .faq-a {
+    margin: 0;
+    padding: 0 1.25rem 1.15rem;
     color: var(--color-muted);
+    max-width: none;
   }
 
-  .empty { color: var(--color-muted); }
+  /* ─── Callout (battle-tested) ─── */
+  .callout {
+    border: 1px solid var(--color-border);
+    border-top: 2px solid var(--color-accent);
+    border-radius: 12px;
+    padding: 2.5rem 2.25rem;
+    text-align: center;
+    background:
+      radial-gradient(ellipse at 50% -10%, var(--color-accent-glow), transparent 60%),
+      var(--color-panel);
+  }
+  .callout .kicker { margin-bottom: 0.75rem; }
+  .callout h2 { margin-top: 0; }
+  .callout p { max-width: 46em; margin-left: auto; margin-right: auto; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ─── Closing ─── */
+  .closing {
+    position: relative;
+    text-align: center;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 3rem 1.5rem;
+    background:
+      radial-gradient(ellipse at 50% -20%, var(--color-accent-glow), transparent 60%),
+      var(--color-panel);
+  }
+  .closing h2 { margin: 0 auto 1.5rem; max-width: none; }
+  .closing .muted { max-width: 38em; margin: 1.5rem auto 0; }
+
+  /* ─── Scroll reveal ─── */
+  .reveal-ready .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
+  .reveal-ready .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
 </style>
