@@ -39,4 +39,9 @@ draft: false                  # optional, default false
 
 ## Deployment
 
-GitHub Actions workflow (`.github/workflows/deploy.yml`) builds with pnpm on push to `master`. `site` in `astro.config.mjs` is `https://patr.cloud` — the apex DNS must point at GitHub Pages with the custom domain configured for links/OG URLs to resolve.
+GitHub Actions workflow (`.github/workflows/deploy.yml`) builds with pnpm on push to `master`. `site` in `astro.config.mjs` is `https://patr.cloud`.
+
+Domains (Cloudflare DNS):
+- `patr.cloud` (apex) is the GitHub Pages custom domain — set via `public/CNAME`. Apex A records point at GitHub Pages (`185.199.108–111.153`), DNS-only.
+- `www.patr.cloud` (CNAME → `patr-cloud.github.io`, DNS-only) is auto-redirected to the apex by GitHub Pages — it's the apex/www pair, no extra config.
+- `blog.patr.cloud` is the *old* domain. It's **proxied** through Cloudflare (orange cloud) with a Redirect Rule doing `blog.patr.cloud/posts/{slug}` → 302 → `patr.cloud/blog/{slug}` (dynamic: `concat("https://patr.cloud/blog/", substring(http.request.uri.path, 7))`). Arbitrary subdomains like this can't be served by GitHub Pages alongside the apex, hence the edge redirect.
