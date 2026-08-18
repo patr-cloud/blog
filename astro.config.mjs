@@ -9,7 +9,7 @@ export default defineConfig({
   integrations: [sitemap()],
   markdown: {
     shikiConfig: {
-      theme: 'github-dark',
+      theme: 'catppuccin-mocha',
       wrap: false,
     },
   },
