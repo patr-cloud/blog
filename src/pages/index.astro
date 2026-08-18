@@ -256,16 +256,16 @@ const jsonLd = [
       <table class="comparison">
         <thead>
           <tr>
-            <th></th>
+            <th scope="col"></th>
             {comparisonCols.map((col, i) => (
-              <th class={i === 0 ? 'col-patr' : ''}>{col}</th>
+              <th scope="col" class={i === 0 ? 'col-patr' : ''}>{col}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {comparisonRows.map(([label, ...cells]) => (
             <tr>
-              <td class="row-label">{label}</td>
+              <th scope="row" class="row-label">{label}</th>
               {cells.map((c, i) => (
                 <td class={i === 0 ? 'col-patr' : ''}>
                   <span class={`mark mark-${c.mark}`} role="img" aria-label={markLabel[c.mark]}>
@@ -482,6 +482,8 @@ const jsonLd = [
     text-align: center;
   }
   .section p { max-width: 44em; }
+  /* Inline body links: underline so they're distinguishable by more than colour (a11y). */
+  .beta-note a, .section p a, .faq-a a { text-decoration: underline; text-underline-offset: 2px; }
   /* Standalone prose paragraphs read centered; text inside cards/faq/table keeps its own alignment. */
   .section > p {
     max-width: 42em;
@@ -600,7 +602,7 @@ const jsonLd = [
     line-height: 1.7;
     color: #e6e6e6;
   }
-  .c-comment { color: #7a7290; }
+  .c-comment { color: #928ab0; }
   .c-prompt { color: var(--color-accent); }
   .c-ok { color: var(--mark-yes); }
   .c-arrow { color: var(--color-accent); }
@@ -626,7 +628,8 @@ const jsonLd = [
     border-bottom: 1px solid var(--color-border);
   }
   .comparison .row-label { font-weight: 500; white-space: nowrap; }
-  .comparison tbody tr:last-child td { border-bottom: none; }
+  .comparison tbody tr:last-child td,
+  .comparison tbody tr:last-child th { border-bottom: none; }
   /* Highlighted Patr column */
   .comparison .col-patr {
     background: var(--color-accent-glow);
