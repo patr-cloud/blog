@@ -5,3 +5,4 @@ node_modules/
 .env.*
 .[Dd][Ss]_[Ss]tore
 .playwright-mcp/
+CLAUDE.local.md
